@@ -1,0 +1,760 @@
+---
+title: "tidy"
+author: "L"
+date: "2023-11-01"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# libraries
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(haven)
+library(purrr)
+library(skimr)
+library(compareGroups)
+library(corrr)
+library(Hmisc)
+library(labelled)
+library(writexl)
+library(tibble)
+```
+
+## 
+
+```{r data, echo=FALSE}
+# Load the data
+data <- read_dta("C:/Users/luisl/iCloudDrive/documentos/MCIE/biostat/basedatos/base_datos/data/cronicas/raw/0. CRONICAS COHORT COMPLETE DATASET [WIDE].dta") %>% as_factor()
+head(data)
+str(data)
+glimpse(data)
+```
+
+
+```{r formatear datos & resumen}
+
+#data2$sexo <- factor(data$sexo, levels = c("Female", "Male"), labels = c(0, 1))
+
+data %>% skim() %>%
+  mutate(label = label(data)) %>%
+  writexl::write_xlsx(path = "table.xlsx")
+
+```
+
+
+
+#Medidas recolectadas en triplicado en el basal (CC, PA)
+
+*data 2 = data
+```{r 1.c.cintura}
+# data missing in C-Reactive Protein...
+
+# excluir desenlace en basal: 
+
+#### crear variable SM 
+## 
+# Assuming 'df' is your data frame with the variables of interest
+# Calculate the mean across the specified columns,  ignorando values NAs para calcular promedio.
+
+#***c.cintura
+#*
+
+data2 <- data
+data2$cintur_mean_f0 <- rowMeans(data2[, c("cintur_m1", "cintur_m2", "cintur_m3")], na.rm = TRUE)
+
+# The R equivalent to Stata's codebook would be the summary() function,
+# which provides a summary of the variable, including missing values
+summary(data2$cintur_mean_f0)
+
+# You can also count the number of non-NA and NA entries for 'cintur_mean_f0'
+total_missing <- sum(is.na(data2$cintur_mean_f0))
+total_non_missing <- sum(!is.na(data2$cintur_mean_f0))
+total_observations <- nrow(data2)
+
+# Print out the missing and total counts
+cat("No NAs para cintur_mean_f0:", total_non_missing, "\n")
+cat("NAs cintur_mean_f0:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+# NAs
+data2$na_count <- rowSums(is.na(data2[, c("cintur_m1", "cintur_m2", "cintur_m3")]),na.rm = TRUE)
+
+# 3 NA
+all_na <- sum(data2$na_count == 3)
+
+# 1 NA
+one_na <- sum(data2$na_count == 1)
+
+#2 NA
+two_na <- sum(data2$na_count == 2)
+
+# Imprimir los resultados
+cat("Número de observaciones con todos los valores como NA:", all_na, "\n")
+cat("Número de observaciones con exactamente un NA:", one_na, "\n")
+cat("Número de observaciones con exactamente dos NA:", two_na, "\n")
+
+
+```
+
+
+
+```{r 2.PAS}
+# PAS
+data2$psisto_f0 <- rowMeans(data2[, c("psisto_m1", "psisto_m2", "psisto_m3")], na.rm = TRUE)
+summary(data2$psisto_f0)
+# N. NAs y no NAs
+total_missing <- sum(is.na(data2$psisto_f0))
+total_non_missing <- sum(!is.na(data2$psisto_f0))
+total_observations <- nrow(data2)
+
+# hallazgo
+cat("No NAs para psisto_f0:", total_non_missing, "\n")
+cat("NAs psisto_f0:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+# NAs
+data2$na_count <- rowSums(is.na(data2[, c("psisto_m1", "psisto_m2", "psisto_m3")]),na.rm = TRUE)
+
+#3 NA
+all_na <- sum(data2$na_count == 3)
+
+# 1 NA
+one_na <- sum(data2$na_count == 1)
+
+# 2 NA
+two_na <- sum(data2$na_count == 2)
+
+# Imprimir los resultados
+cat("Número de observaciones con todos los valores como NA:", all_na, "\n")
+cat("Número de observaciones con exactamente un NA:", one_na, "\n")
+cat("Número de observaciones con exactamente dos NA:", two_na, "\n")
+
+```
+
+
+```{r PAD}
+# PAD
+data2$pad_f0 <- rowMeans(data2[, c("pdiast_m1", "pdiast_m2", "pdiast_m3")], na.rm = TRUE)
+summary(data2$pad_f0)
+# N. NAs y no NAs
+total_missing <- sum(is.na(data2$pad_f0))
+total_non_missing <- sum(!is.na(data2$pad_f0))
+total_observations <- nrow(data2)
+
+# hallazgo
+cat("No NAs para pad_f0:", total_non_missing, "\n")
+cat("NAs pad_f0:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+# Crear una nueva columna en el data2 frame que contará cuántos NAs hay en cada fila
+data2$na_count <- rowSums(is.na(data2[, c("pdiast_m1", "pdiast_m2", "pdiast_m3")]),na.rm = TRUE)
+
+# 3 NA
+all_na <- sum(data2$na_count == 3)
+
+# 1 NA
+one_na <- sum(data2$na_count == 1)
+
+# 2 NA
+two_na <- sum(data2$na_count == 2)
+
+# Imprimir los resultados
+cat("Número de observaciones con todos los valores como NA:", all_na, "\n")
+cat("Número de observaciones con exactamente un NA:", one_na, "\n")
+cat("Número de observaciones con exactamente dos NA:", two_na, "\n")
+```
+
+# Medidas de laboratorio, recolectadas una vez en el basal
+
+```{r 3.trigliceridos}
+# TG
+summary(data2$trig)
+# N. NAs y no NAs
+total_missing <- sum(is.na(data2$trig))
+total_non_missing <- sum(!is.na(data2$trig))
+total_observations <- nrow(data2)
+
+# hallazgo NAs
+cat("No NAs para trig:", total_non_missing, "\n")
+cat("NAs trig:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+```
+
+```{r 4.HDL}
+# TG
+summary(data2$hdlc)
+# N. NAs y no NAs
+total_missing <- sum(is.na(data2$hdlc))
+total_non_missing <- sum(!is.na(data2$hdlc))
+total_observations <- nrow(data2)
+
+# hallazgo NAs
+cat("No NAs para hdlc:", total_non_missing, "\n")
+cat("NAs hdlc:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+```
+
+```{r 5.Glucosa}
+# TG
+summary(data2$glucose)
+# N. NAs y no NAs
+total_missing <- sum(is.na(data2$glucose))
+total_non_missing <- sum(!is.na(data2$glucose))
+total_observations <- nrow(data2)
+
+# hallazgo NAs
+cat("No NAs para glucose:", total_non_missing, "\n")
+cat("NAs glucose:", total_missing, "\n")
+cat("Total obs:", total_observations, "\n")
+
+# Existen 484 (13.4%) observaciones que no tienen medidas de laboratorio...
+484/3619
+
+```
+
+```{r SMbasal_by_sexo}
+# Presencia de síndrome metabólico en el basal
+#data missing sexo
+sum(is.na(data2$sexo))
+#22 datos perdidos
+
+#2 funciones: 1. con sexo datos completos y 2. NAs en sexo.
+
+#I. sexo =! NAs
+#
+
+calculate_sm_with_sex <- function(psisto_f0, pad_f0, cintur_mean_f0, trig, hdlc, glucose, sexo, colesalt, presart, diabetesm) {
+  waist_threshold <- ifelse(sexo == 0, 80, 90)
+  hdlc_threshold <- ifelse(sexo == 0, 50, 40)
+  
+  criteria_count <- sum(
+    ifelse(!is.na(cintur_mean_f0), cintur_mean_f0 >= waist_threshold, FALSE),
+    ifelse(!is.na(trig), trig >= 150, FALSE) || colesalt == 2,#actualmente toma meds para hcolesterol(2)
+    ifelse(!is.na(hdlc), hdlc < hdlc_threshold, FALSE) || colesalt == 2,
+    ifelse(!is.na(psisto_f0), psisto_f0 >= 130, FALSE) || ifelse(!is.na(pad_f0), pad_f0 >= 85, FALSE) || presart == 2,
+    ifelse(!is.na(glucose), glucose >= 100, FALSE) || diabetesm == 2,
+    na.rm = TRUE
+  )
+  
+  return(list(criteria_count = criteria_count, sm = as.integer(criteria_count >= 3)))
+}
+
+
+
+#calculate_sm_with_sex <- function(psisto_f0, pad_f0, cintur_mean_f0, trig, hdlc, glucose, sexo) {
+#  waist_threshold <- ifelse(sexo == 0, 80, 90)
+#  hdlc_threshold <- ifelse(sexo == 0, 50, 40)
+  
+#  criteria_count <- sum(!is.na(cintur_mean_f0) && cintur_mean_f0 >= waist_threshold,
+#                        !is.na(trig) && trig > 150,
+#                        !is.na(hdlc) && hdlc < hdlc_threshold,
+#                        (!is.na(psisto_f0) && psisto_f0 >= 130) || (!is.na(pad_f0) && pad_f0 >= 85),
+#                        !is.na(glucose) && glucose >= 100, 
+#                        na.rm = TRUE)
+#  
+#  return(as.integer(criteria_count >= 3))
+#}
+
+#II. sexo = NAs
+
+calculate_sm_without_sex <- function(psisto_f0, pad_f0, trig, glucose, colesalt, presart, diabetesm) {
+  criteria_count <- sum(
+    ifelse(!is.na(trig), trig >= 150, FALSE) || colesalt == 2,
+    ifelse(!is.na(psisto_f0), psisto_f0 >= 130, FALSE) || ifelse(!is.na(pad_f0), pad_f0 >= 85, FALSE) || presart == 2,
+    ifelse(!is.na(glucose), glucose >= 100, FALSE) || diabetesm == 2,
+    na.rm = TRUE
+  )
+  
+  return(list(criteria_count = criteria_count, sm = as.integer(criteria_count >= 3)))
+}
+
+#calculate_sm_without_sex <- function(psisto_f0, pad_f0, trig, glucose) {
+#  criteria_count <- sum(!is.na(trig) && trig > 150,
+ #                       (!is.na(psisto_f0) && psisto_f0 >= 130) || (!is.na(pad_f0) && pad_f0 >= #85),
+#                        !is.na(glucose) && glucose >= 100, 
+#                        na.rm = TRUE)
+#  
+#  return(as.integer(criteria_count >= 3))
+#}
+
+# Datos completos
+#data_with_sex <- data[!is.na(data$sexo), ]
+#data_with_sex$sm_positivo <- lapply(data_with_sex[, c('psisto_f0', 'pad_f0', 'cintur_mean_f0', 'trig', 'hdlc', 'glucose', 'sexo')], 1, function(row) {
+#  calculate_sm_with_sex(row['psisto_f0'], row['pad_f0'], row['cintur_mean_f0'], row['trig'], row['hdlc'], row['glucose'], row['sexo'])
+#})
+
+
+
+# Convert the haven_labelled column(s) to factor and then to numeric
+data2 <- data2 %>%
+  mutate(across(where(is.labelled), ~ as.numeric(as_factor(.))))
+
+# Apply pmap
+# Aplicar pmap y extraer solo el elemento sm de los resultados
+#data2$sm_with.sexo <- pmap(data2[, c('psisto_f0', 'pad_f0', 'cintur_mean_f0', 'trig', 'hdlc', 'glucose', 'sexo')], calculate_sm_with_sex) %>% map_dbl(~ .x$sm)
+
+data2$sm_with_sex <- pmap(data2[, c('psisto_f0', 'pad_f0', 'cintur_mean_f0', 'trig', 'hdlc', 'glucose', 'sexo', 'colesalt', 'presart', 'diabetesm')], calculate_sm_with_sex)
+data2$sm_without_sex <- pmap(data2[, c('psisto_f0', 'pad_f0', 'trig', 'glucose', 'colesalt', 'presart', 'diabetesm')], calculate_sm_without_sex)
+
+# Extrae el componente 'sm' de los resultados de pmap
+data2$sm_with_sex <- map_dbl(data2$sm_with_sex, ~ .x$sm)
+data2$sm_without_sex <- map_dbl(data2$sm_without_sex, ~ .x$sm)
+
+table(data2$sm_without_sex)
+#hay 181 casos de SM en aquellos con NAs en sexo.
+
+# Manejo de NA en la columna 'sexo'
+data2$sexo_nomissing <- !is.na(data2$sexo)
+
+# Aplica la lógica para seleccionar la clasificación SM correcta
+data2$sm <- ifelse(data2$sexo_nomissing, data2$sm_with_sex, data2$sm_without_sex)
+
+# Tabla de resultados
+table(data2$sm, data2$sexo)
+
+#data2$sm_with.sexo <- pmap(data2[, c('psisto_f0', 'pad_f0', 'cintur_mean_f0', 'trig', 'hdlc', 'glucose', 'sexo', 'colesalt')], calculate_sm_with_sex) %>% map_dbl(~ .x$sm)
+
+# Sexo con NAs
+#data_without_sex <- data[is.na(data$sexo), ]
+#data_without_sex$sm_positivo <- lapply(data_without_sex[, c('psisto_f0', 'pad_f0', 'trig', 'glucose')], 1, function(row) {
+#  calculate_sm_without_sex(row['psisto_f0'], row['pad_f0'], row['trig'], row['glucose'])
+#})
+
+#data2$sm_without.sex <- pmap(data2[,c('psisto_f0', 'pad_f0', 'trig', 'glucose')], calculate_sm_without_sex) %>% map_dbl(~ .x$sm)
+
+
+# Combinar datasets
+#data2$sm <- rbind(data2$sm_with.sexo, data2$sm_without.sex)
+#data2$sm <- c(data2$sm_with.sexo, data2$sm_without.sex)
+
+#data2$sexo_nomissing <- !is.na(data2$sexo)
+
+#data2$sm <- ifelse(data2$sexo_nomissing, data2$sm_with_sex, data2$sm_without_sex)
+
+# Ordenar los datos si es necesario para mantener el orden original
+#data2 <- data2[order(row.names(data2)),]
+
+#data2$sm_without.sexo <- unlist(data2$sm_without.sexo)
+#data2$sm_with.sexo <- unlist(data2$sm_with.sexo)
+#data2$sm <- unlist(data2$sm)
+#table(data2$sm, data2$sexo)
+
+```
+
+```{r retrieve_information_vars}
+
+
+#get_variable_info <- function(variables, data) {
+#  info <- tibble(
+#    variable = variables,
+#    exists_in_data = variables %in% names(data),
+#    type = sapply(variables, function(var) {
+#      if (var %in% names(data)) {
+#        class(data[[var]])
+#      } else {
+#        NA
+#      }
+#    }),
+#    levels = sapply(variables, function(var) {
+ #     if (var %in% names(data) && is.factor(data[[var]])) {
+ #       as.numeric(levels(data[[var]]))
+  #    } else if (var %in% names(data) && !is.null(attr(data[[var]], "labels"))) {
+  #      names(attr(data[[var]], "labels"))
+ #     } else {
+ #       NA
+#      }
+ #   }, simplify = FALSE),
+  #  labels = sapply(variables, function(var) {
+  #    if (var %in% names(data) && is.factor(data[[var]])) {
+ #       as.character(levels(data[[var]]))
+ #     } else if (var %in% names(data) && !is.null(attr(data[[var]], "labels"))) {
+ #       attr(data[[var]], "labels")
+ #     } else {
+ #       NA
+ #     }
+ #   }, simplify = FALSE)
+ # )
+  
+  # To display the variable names properly and convert list columns to character
+#  info <- info %>%
+ #   mutate(variable = as.character(variable)) %>%
+#    mutate(levels = ifelse(is.list(levels), sapply(levels, paste, collapse = "; "), levels),
+ #          labels = ifelse(is.list(labels), sapply(labels, paste, collapse = "; "), #labels))
+
+#  return(info)
+#}
+get_variable_info <- function(variables, data) {
+  info <- tibble(
+    variable = variables,
+    exists_in_data = variables %in% names(data),
+    type = sapply(variables, function(var) {
+      if (var %in% names(data)) {
+        return(class(data[[var]]))
+      } else {
+        return(NA)
+      }
+    }),
+    description = sapply(variables, function(var) {
+      if (var %in% names(data)) {
+        attr_label <- attr(data[[var]], "label")
+        if (!is.null(attr_label)) {
+          return(attr_label)
+        } else {
+          return("No label attribute")
+        }
+      } else {
+        return("Variable not in data")
+      }
+    }),
+    levels = sapply(variables, function(var) {
+      if (var %in% names(data) && is.factor(data[[var]])) {
+        return(levels(data[[var]]))
+      } else {
+        return(NA)
+      }
+    }, simplify = FALSE),
+    numeric_levels = sapply(variables, function(var) {
+      if (var %in% names(data) && is.factor(data[[var]])) {
+        return(as.numeric(levels(data[[var]])))
+      } else {
+        return(NA)
+      }
+    }, simplify = FALSE)
+  )
+
+  # To display the variable names properly and convert list columns to character
+  info <- info %>%
+    mutate(variable = as.character(variable),
+           description = as.character(description),
+           levels = ifelse(is.list(levels), sapply(levels, function(x) paste(x, collapse = "; ")), as.character(levels)),
+           numeric_levels = ifelse(is.list(numeric_levels), sapply(numeric_levels, function(x) paste(x, collapse = "; ")), as.character(numeric_levels)))
+  
+  return(info)
+}
+
+
+#data
+#1. criterio trigliceridos
+trigliceridos <- c("trig","f2trig")
+variable_info <- get_variable_info(trigliceridos, data2)
+print(variable_info)
+
+#2. criterio HDL-c
+hdl <- c("colesalt", "colesaltm", "choldrugs" ,"colesal_p" ,"colesal_v" , "colesal_h", "colesal_t", "colesal_o", "cholest","hdlc" , "f1colesalt","f1colesaltm","f2colesalt", "f2colesaltm", "f2vpsicolog" ,"f2cholest", "f2hdlc")
+variable_info <- get_variable_info(hdl, data2)
+print(variable_info)
+
+#3. criterio PA: HTA
+presion_art <- c("presart", "presartm", "depression", "htdrugs", "hts",         
+ "htd"        ,  "ht1"        ,  "htdx"    ,     "presartmay" ,  "hosprespi" ,  
+ "f1txpresart" , "f1mdcpresart", "f1md1presart", "f1md2presart", "f1md3presart",
+ "f1md4presart", "f1presartmay", "f2txpresart",  "f2mdcpresart", "f2md1presart",
+ "f2md2presart", "f2md3presart", "f2md4presart", "f2hosprespi",  "f2depression",
+ "f2hts"  ,      "f2htd"    ,    "f2ht1")
+variable_info <- get_variable_info(presion_art, data2)
+print(variable_info)
+
+#4. criterio glucosa: diabetes
+dm <- c("diabetesm" , "diabetesmed"  ,"diabetes" ,"diabete_q"  ,"diabete_l"  , "diabete_a"  ,"diabete_p"  ,"diabete_v" ,"diabete_h"  ,"diabete_t"  ,
+"diabete_o"  ,"gdmgrasa1"  ,"gdmgrasa2"  ,"f1insufcardm"  ,"f1txdiabetes" ,
+"f1mddiabetes" ,"f1md1diabet"  ,"f1md2diabet" ,"f1md3diabet" ,"f1md4diabet" ,
+"f1citasxdiab" ,"f1txdiabhora" ,"f1txdiabdosi" ,"f1gdmgrasa1" ,"f1gdmgrasa2" ,
+"f2insufcardm" ,"f2txdiabetes" ,"f2mddiabetes" ,"f2md1diabet","f2md2diabet" ,
+"f2md3diabet","f2md4diabet","f2p1mdmenq" ,"f2p2mdmenq" ,"f2p3mdmenq" ,
+"f2cuidmastm","f2prdiabuen" ,"f2gdmgrasa1" ,"f2gdmgrasa2")
+variable_info <- get_variable_info(dm, data2)
+print(variable_info)
+
+#antecedente familiar - 
+
+ant_fam <- c("nfamilias","ingrefam","probfamil","noantfami","f2ingrefam","dise", "f2prmolefam")
+variable_info <- get_variable_info(ant_fam,data2)
+print(variable_info)
+
+#dieta
+
+dieta <- c("diet","f1p_dieta", "f1d_dieta")
+variable_info <- get_variable_info(dieta,data2)
+print(variable_info)
+
+```
+
+
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7613217/ 
+version of an FFQ, based on a similar questionnaire designed by an earlier study(Reference O’Donnell, Xavier and Diener17), to obtain information on consumption frequency of certain foods and beverages, selected because either they are commonly eaten foods in Peru or known to be linked to chronic disease(Reference McCloskey, Tarazona-Meza and Jones-Smith18). In completing the FFQ participants were asked to report how many times per month or week they consumed foods and beverages within twenty-three categories (see online supplementary material, Supplemental
+Table S1). 
+
+Each food group variable was split into four categories (zero consumption and tertiles of frequency) to reflect proportional consumption frequency of each food group prior to dietary pattern analysis(Reference Leech, Worsley and Timperio2
+
+
+Table 2 shows the summarised dietary intake patterns which can be labelled as follows based on the stage of the nutrition transition reflected by the diet: ‘stage 1’, traditional diet consisting of high-starch and low-fat foods with low diversity of food groups consumed; ‘stage 2’, elements of the traditional diet remain with increasing range of high-fibre foods as well as high-fat foods consumed; ‘stage 3’, higher in processed foods and animal products that contain high fat and sugar, with less of the traditional high-fibre foods; and ‘stage 4’, with high diversity of food group consumption including high-fibre, high-fat and high-sugar foods, indicative of a fully transitioned diet.
+
+
+```{r create_diet}
+
+
+#potato & low diversity: stage1 (alto almidon y bajas grasas con dietas tradicionales)
+#potato & vegetables: stage2  (comidas tradicionales con altas grasas y alto en fibra)
+#High diversity, animal & processed food: stage4 (Alta diversidad de grupos de comidas, incluyendo fibra alta, grasa alta, azucar alta)
+#Fish & processed food: stage3 (alto en comida procesada y productos animales que contienen alta grasa y azucar)
+
+
+table(data2$diet, data2$site)
+table(data2$f1p_dieta)
+table(data2$f1d_dieta)
+```
+
+
+```{r all_vars}
+# grep() returns indices of the names that match, value=TRUE returns the names themselves
+
+#criterio trigliceridos
+patron <- "trig|Trig"
+trig <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(trig))
+
+#criterio HDL-c
+patron <- "chol|col|hdlc|Col|Chol|hd"
+hdlc <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(hdlc))
+
+#criterio PA
+
+patron <- "hta|ht|hiper|Hip|hyp|hy|Hy|high|pres"
+var_ht <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(var_ht))
+
+#criterio glucosa
+patron <- "dm|dm2|diabetes|diab|Diab"
+var_dm <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(var_dm))
+
+#antecedente familiar
+patron <- "fam|antec|hist|padre|madre|moth|fath|dise"
+hist_fam <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(hist_fam))
+
+#antecedente familiar
+patron <- "diet|grain|dairy|produc|meat|poul|fish|sea|egg|piz|veget|legum|nut|seed|food|pick|fried|deep|potato|salt|fruit|beverag|UPF|processed|carne|pescado|alimen|comid"
+diet <- data2[, grep(patron, names(data2), value = TRUE)]
+print(names(diet))
+
+```
+
+```{r}
+table(data$frutasf)
+table(data$pescadof)
+table(data$ffood)
+
+```
+
+
+*For the current analysis, we used data from baseline and the second follow-up, hence covering a 30-month period.
+*https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7613217/
+*Participants were randomly selected using a sex- and age-stratified sampling strategy.
+
+*FFQ, based on a similar questionnaire designed by an earlier study(,17), to obtain information on consumption frequency of certain foods and beverages, selected because either they are commonly eaten foods in Peru or known to be linked to chronic disease
+* In completing the FFQ participants were asked to report how many times per month or week they consumed foods and beverages within twenty-three categories (see online supplementary material, Supplemental Table S1).
+
+
+```{r describe_vars_criterios_alternativos_medicamentos_diagnosticos}
+
+#1. criterio trigliceridos
+trigliceridos <- c("trig","f2trig")
+variable_info <- get_variable_info(trigliceridos, data)
+print(variable_info)
+
+#2. criterio HDL-c
+hdl <- c("colesalt", "colesaltm", "choldrugs" ,"colesal_p" ,"colesal_v" , "colesal_h", "colesal_t", "colesal_o", "cholest","hdlc" , "f1colesalt","f1colesaltm","f2colesalt", "f2colesaltm", "f2vpsicolog" ,"f2cholest", "f2hdlc")
+variable_info <- get_variable_info(hdl, data)
+print(variable_info)
+
+#3. criterio PA: HTA
+presion_art <- c("presart", "presartm", "depression", "htdrugs", "hts",         
+ "htd"        ,  "ht1"        ,  "htdx"    ,     "presartmay" ,  "hosprespi" ,  
+ "f1txpresart" , "f1mdcpresart", "f1md1presart", "f1md2presart", "f1md3presart",
+ "f1md4presart", "f1presartmay", "f2txpresart",  "f2mdcpresart", "f2md1presart",
+ "f2md2presart", "f2md3presart", "f2md4presart", "f2hosprespi",  "f2depression",
+ "f2hts"  ,      "f2htd"    ,    "f2ht1")
+variable_info <- get_variable_info(presion_art, data)
+print(variable_info)
+
+#4. criterio glucosa: diabetes
+dm <- c("diabetesm" , "diabetesmed"  ,"diabetes" ,"diabete_q"  ,"diabete_l"  , "diabete_a"  ,"diabete_p"  ,"diabete_v" ,"diabete_h"  ,"diabete_t"  ,
+"diabete_o"  ,"gdmgrasa1"  ,"gdmgrasa2"  ,"f1insufcardm"  ,"f1txdiabetes" ,
+"f1mddiabetes" ,"f1md1diabet"  ,"f1md2diabet" ,"f1md3diabet" ,"f1md4diabet" ,
+"f1citasxdiab" ,"f1txdiabhora" ,"f1txdiabdosi" ,"f1gdmgrasa1" ,"f1gdmgrasa2" ,
+"f2insufcardm" ,"f2txdiabetes" ,"f2mddiabetes" ,"f2md1diabet","f2md2diabet" ,
+"f2md3diabet","f2md4diabet","f2p1mdmenq" ,"f2p2mdmenq" ,"f2p3mdmenq" ,
+"f2cuidmastm","f2prdiabuen" ,"f2gdmgrasa1" ,"f2gdmgrasa2")
+variable_info <- get_variable_info(dm, data)
+print(variable_info)
+
+
+```
+#usa medicamentos basal
+#colesalt
+#choldrugs
+#usa medicamentos a los 30 meses (f2)
+##f2colesalt	TRUE	@ label : "Medicine for lipids?"
+#f2colesaltm "label")= chr "Lipids treatment"
+#f2choldrugs no hay.
+#choldrugs = colesalt
+#htdx	TRUE	@ label : chr "Hypertension diagnosed by Physician"
+#queda var colesalt en ambos seguimientos (basal y f2): tratamiento
+
+
+
+##################comparar despues de incluir medicamentos a SM########
+
+```{r hypertension}
+library(janitor)
+
+table(data2$sm_positivo) 
+#1412 SM+ en el basal sin considerar las variables extras por añadir (consumo de medicamentos)
+#comprobando que se incluyan los hipertenso en SM
+tabla <- table(data2$htdx,data2$sm)
+dimnames(tabla) <- list(htdx = c("No", "Yes"), sm = c("No", "Yes"))
+tabla_prop <- prop.table(tabla) * 100 
+formatted_tabla <- apply(tabla, c(1, 2), function(x, y) paste0(x, " (", format(round(y[x], 1)), "%)"), y = tabla_prop)
+print(formatted_tabla)
+
+# Calcular la tabla y convertirla en data frame
+tabla <- table(data2$htdx, data2$sm)
+tabla
+
+data2 %>% 
+  tabyl(htdx,sm) %>%  
+  adorn_totals(c("row")) %>% 
+  adorn_totals(c("col")) %>% 
+  adorn_percentages() %>% 
+  adorn_pct_formatting() %>% 
+  adorn_ns(position = "front") %>% 
+  adorn_title()
+
+```
+
+
+```{r htdrugs}
+sum(is.na(data2$sm))
+
+data2 %>% 
+  tabyl(htdrugs,sm) %>%  
+  adorn_totals(c("row")) %>% 
+  adorn_totals(c("col")) %>% 
+  adorn_percentages() %>% 
+  adorn_pct_formatting() %>% 
+  adorn_ns(position = "front") %>% 
+  adorn_title()
+
+data2 %>% 
+  tabyl(htdrugs) %>%  #<<
+  adorn_totals("row") %>% 
+  adorn_pct_formatting()
+```
+
+```{r data3_exclude_missing_crp_basal}
+# data missing in exposure: C-Reactive Protein (CRP)...
+sum(is.na((data2$crp)))
+
+#without missings in CRP_basal
+data3 <- data2 %>% filter(!is.na(crp))
+
+#porcentaje de datos perdidos
+484/3619*100
+
+count(data3)
+```
+
+
+#data3: 3135 obs
+```{r laboratorio}
+# descripcion de lab f0
+str(data3[, c("trig", "hdlc", "glucose", "crp")])
+summary(data3[, c("trig", "hdlc", "glucose", "crp")])
+summarise(data3, across(c("trig", "hdlc", "glucose", "crp"), ~sum(is.na(.))))
+
+# descripcion de lab f2
+str(data2[, c("f2trig", "f2hdlc", "f2glucose", "f2crp")])
+summary(data2[, c("f2trig", "f2hdlc", "f2glucose", "f2crp")])
+summarise(data2, across(c("f2trig", "f2hdlc", "f2glucose", "f2crp"), ~sum(is.na(.))))
+```
+
+
+
+#indagar diferencias de NAs en variables x triplicado
+```{r triplicados_antropometricos_PA}
+# descripcion de circunferencia de cintura en triplicado f0,f1,f2
+str(data3[, c("cintur_m1", "cintur_m2", "cintur_m3", "f1cintur_m1", "f1cintur_m2", "f1cintur_m3", "f2cintur_m1", "f2cintur_m2", "f2cintur_m3")])
+summary(data3[, c("cintur_m1", "cintur_m2", "cintur_m3", "f1cintur_m1", "f1cintur_m2", "f1cintur_m3", "f2cintur_m1", "f2cintur_m2", "f2cintur_m3")])
+summarise(data3, across(c("cintur_m1", "cintur_m2", "cintur_m3", "f1cintur_m1", "f1cintur_m2", "f1cintur_m3", "f2cintur_m1", "f2cintur_m2", "f2cintur_m3"), ~sum(is.na(.))))
+
+# Codebook for psisto measurements
+str(data3[, c("pdiast_m1", "pdiast_m2", "pdiast_m3", "f1pdiast_m1", "f1pdiast_m2", "f1pdiast_m3", "f2pdiast_m1", "f2pdiast_m2", "f2pdiast_m3")])
+summary(data3[, c("pdiast_m1", "pdiast_m2", "pdiast_m3", "f1pdiast_m1", "f1pdiast_m2", "f1pdiast_m3", "f2pdiast_m1", "f2pdiast_m2", "f2pdiast_m3")])
+summarise(data3, across(c("pdiast_m1", "pdiast_m2", "pdiast_m3", "f1pdiast_m1", "f1pdiast_m2", "f1pdiast_m3", "f2pdiast_m1", "f2pdiast_m2", "f2pdiast_m3"), ~ sum(is.na(.))))
+
+```
+
+
+
+
+
+```{r data_distribution}
+#missing crp-ubasal: 484
+
+table(data3$sm)
+# 3135  
+
+sum(is.na(data3$sm))
+# 0
+
+#criterios de sm basal
+
+
+vars_basal <- data3[,c("psisto_f0", "pad_f0", "cintur_mean_f0", "trig", "hdlc", "glucose")]
+
+
+vars_basal_resumen <- vars_basal %>% 
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
+  group_by(variable) %>%
+  summarise(
+    n = sum(!is.na(valor)),
+    minimo = min(valor, na.rm = TRUE),
+    Q1 = quantile(valor, 0.25, na.rm = TRUE),
+    mediana = median(valor, na.rm = TRUE),
+    media = mean(valor, na.rm = TRUE),
+    Q3 = quantile(valor, 0.75, na.rm = TRUE),
+    maximo = max(valor, na.rm = TRUE),
+    n_NA = sum(is.na(valor)),
+    p1 = quantile(valor, 0.01, na.rm = TRUE),
+    p99 = quantile(valor, 0.99, na.rm = TRUE),
+    menor_p1 = sum(valor < quantile(valor, 0.01, na.rm = TRUE), na.rm = TRUE),
+    mayor_p99 = sum(valor > quantile(valor, 0.99, na.rm = TRUE), na.rm = TRUE)
+  )
+
+
+print(vars_basal_resumen)
+#"colesalt""presart", "diabetesm"
+write_xlsx(vars_basal_resumen, path = "vars_basal_resumen.xlsx")
+
+
+```
+
+```{r extras}
+#mayorees de 100 en pad
+sum(vars_basal$pad_f0 > 100, na.rm = TRUE)
+
+
+```
+
+
+

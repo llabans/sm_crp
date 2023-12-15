@@ -1,0 +1,132 @@
+---
+title: "analysis"
+author: "L"
+date: "2023-12-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#data 2 = data
+library(tidyverse)
+library(compareGroups)
+library(writexl)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r covariables}
+
+data2 <- data2 %>%
+  mutate(
+    edu_cat = case_when(
+      educa < 7         ~ "< 7 years",
+      educa >= 7 & educa < 12 ~ "7 - 11 years",
+      educa >= 12       ~ "12+ years",
+      TRUE              ~ "Missing" # Añade una categoría para missings
+    )
+  ) 
+
+```
+
+```{r}
+data2 <- data2 %>%
+  mutate(across(c(sexo, edu_cat, agecat, site, windex, frqbalcoh, constabac, bmicat, diet,sm), as.factor))
+
+desc_table <- compareGroups(as.formula(paste(" ~ ", paste(c('sexo', 'edu_cat', 'agecat', 'site', 'windex', 'frqbalcoh', 'constabac', 'bmicat', 'diet','sm'), collapse= "+"))), data = data2) %>%
+  createTable() 
+
+desc_table
+
+
+```
+
+```{r}
+#evaluar datos missings
+
+
+# Crear una nueva variable que indique si 'crp' está presente (0) o perdido (1)
+data2$missing_crp <- ifelse(is.na(data2$crp), 1, 0)
+data2$missing_sex <- ifelse(is.na(data2$sexo), 1, 0)
+data2$missing_age <- ifelse(is.na(data2$agecat), 1, 0)
+data2$missing_site <- ifelse(is.na(data2$site), 1, 0)
+data2$missing_educa <- ifelse(is.na(data2$edu_cat), 1, 0)
+data2$missing_windex <- ifelse(is.na(data2$windex), 1, 0)
+data2$missing_frqbalcoh <- ifelse(is.na(data2$frqbalcoh), 1, 0)
+data2$missing_constabac <- ifelse(is.na(data2$constabac), 1, 0)
+data2$missing_tot_metscore <- ifelse(is.na(data2$tot_metscore), 1, 0)
+data2$missing_bmicat <- ifelse(is.na(data2$bmicat), 1, 0)
+data2$missing_sm <- ifelse(is.na(data2$sm), 1, 0)
+
+
+# Prueba chi-cuadrado para comparar la proporción de datos perdidos por sexo
+table_sex_missing <- table(data2$missing_sexo, data$missing_crp)
+chisq.test(table_sex_missing)
+
+table_age_missing <- table(data2$missing_age, data$missing_crp)
+chisq.test(table_age_missing)
+
+table_site_missing <- table(data2$missing_site, data$missing_crp)
+chisq.test(table_site_missing)
+
+table_educa_missing <- table(data2$missing_educa, data$missing_crp)
+chisq.test(table_educa_missing)
+
+table_windex_missing <- table(data2$missing_windex, data$missing_crp)
+chisq.test(table_windex_missing)
+
+table_frqbalcoh_missing <- table(data2$missing_frqbalcoh, data$missing_crp)
+chisq.test(table_frqbalcoh_missing)
+
+table_constabac_missing <- table(data2$missing_constabac, data$missing_crp)
+chisq.test(table_constabac_missing)
+
+#table_tot_met_missing <- table(data2$missing_tot_metscore, data$missing_crp)
+#chisq.test(table_tot_met_missing)
+
+table_tot_bmi_missing <- table(data2$missing_bmicat, data$missing_crp)
+chisq.test(table_tot_bmi_missing)
+
+table_sm_missing <- table(data2$missing_sm, data$missing_crp)
+chisq.test(table_sm_missing)
+
+```
+
+```{r}
+# Cargar el conjunto de datos
+# Supongamos que tu conjunto de datos se llama 'data'
+
+# Crear variables indicadoras para cada variable relevante
+# 0 = dato presente, 1 = dato faltante
+
+# Asumimos que las variables son 'sex', 'age', 'site', 'educa', 'windex', 'frqbalcoh', 'constabac', 'tot_met', 'bmi', 'diet', 'sm', 'crp'
+
+variables <- c('sexo', 'age', 'site', 'educa', 'windex', 'frqbalcoh', 'constabac', 'tot_met', 'bmi', 'diet', 'sm')
+
+# Crear las variables indicadoras de datos faltantes
+for (var in variables) {
+  data2[[paste0('missing_', var)]] <- ifelse(is.na(data2[[var]]), 1, 0)
+}
+
+# Crear una función para realizar pruebas de Chi-cuadrado y almacenar los resultados
+perform_chi_squared_test <- function(data2, missing_var, other_var) {
+  table_missing <- table(data2[[missing_var]], data2[[other_var]])
+  test_result <- chisq.test(table_missing)
+  return(test_result)
+}
+
+# Realizar pruebas de Chi-cuadrado para 'missing_crp' contra todas las otras variables indicadoras
+results <- list()
+for (var in variables) {
+  results[[var]] <- perform_chi_squared_test(data2, 'missing_crp', paste0('missing_', var))
+}
+
+# Imprimir los resultados
+for (var in variables) {
+  cat('Chi-squared test for missing_crp vs', var, '\n')
+  print(results[[var]])
+  cat('\n')
+}
+
+```
+
+
